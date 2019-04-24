@@ -11,13 +11,13 @@ const combos = [
     [0, 4, 8],
     [2, 4, 6],
 ];
-
 const cells = document.querySelectorAll('.cell');
+let over = true;
 
 startGame();
 
 function startGame() {
-    document.querySelector('.endgame').style.display = 'none';
+    over = false;
     board = Array.from(Array(9).keys());
     cells.forEach(cell => {
             cell.innerText = '';
@@ -28,7 +28,76 @@ function startGame() {
 }
 
 function turnClick(square) {
-    turn(square.target.id, huPlayer);
+    if (typeof board[square.target.id] === 'number' && !over) {
+        turn(square.target.id, huPlayer);
+        if (!checkTie() && !over) turn(bestSpot(), aiPlayer)
+    }
+}
+
+function checkTie() {
+    if (emptySquares().length === 0) {
+        over = true;
+        cells.forEach(c => {
+            c.removeEventListener('click', turnClick, false);
+            return true;
+        })
+    }
+    return false;
+}
+
+function bestSpot() {
+    return minmax(board, aiPlayer).index;
+}
+
+function minmax(newBoard, player) {
+    let availableSpot = emptySquares(newBoard);
+    if (checkWon(newBoard, player).length > 0) {
+        return {score: -10};
+    } else if (checkWon(newBoard, aiPlayer).length > 0) {
+        return {score: 20};
+    } else if (availableSpot.length === 0) {
+        return {score: 0};
+    }
+    let moves = [];
+    for (let i = 0; i < availableSpot.length; i++) {
+        let move = {};
+        move.index = newBoard[availableSpot[i]];
+        newBoard[availableSpot[i]] = player;
+
+        if (player === aiPlayer) {
+            let result = minmax(newBoard, huPlayer);
+            move.score = result.score;
+        } else {
+            let result = minmax(newBoard, aiPlayer);
+            move.score = result.score;
+        }
+        newBoard[availableSpot[i]] = move.index;
+        moves.push(move);
+    }
+
+    let bestMove;
+    if (player === aiPlayer) {
+        let bestScore = -10000;
+        for (let i = 0; i < moves.length; i++) {
+            if (moves[i].score > bestScore) {
+                bestScore = moves[i].score;
+                bestMove = i;
+            }
+        }
+    } else {
+        let bestScore = 10000;
+        for (let i = 0; i < moves.length; i++) {
+            if (moves[i].score < bestScore) {
+                bestScore = moves[i].score;
+                bestMove = i;
+            }
+        }
+    }
+    return moves[bestMove];
+}
+
+function emptySquares() {
+    return board.filter(s => typeof s == 'number');
 }
 
 function turn(id, player) {
@@ -55,6 +124,7 @@ function checkWon(board, player) {
 }
 
 function gameOver(wonCombo) {
+    over = true;
     wonCombo.forEach(i => {
             document.getElementById(i).style.backgroundColor = 'green';
         }
