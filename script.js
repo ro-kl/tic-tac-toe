@@ -30,15 +30,16 @@ function startGame() {
 function turnClick(square) {
     if (typeof board[square.target.id] === 'number' && !over) {
         turn(square.target.id, huPlayer);
-        if (!checkTie() && !over) turn(bestSpot(), aiPlayer)
+        if (!over && !checkTie()) turn(bestSpot(), aiPlayer)
     }
 }
 
 function checkTie() {
-    if (emptySquares().length === 0) {
+    if (emptySquares().length === 0 && !over) {
         over = true;
         cells.forEach(c => {
             c.removeEventListener('click', turnClick, false);
+            c.style.backgroundColor = 'yellow';
             return true;
         })
     }
@@ -104,7 +105,7 @@ function turn(id, player) {
     board[id] = player;
     document.getElementById(id).innerText = player;
     let wonCombo = checkWon(board, player);
-    wonCombo.length > 0 ? gameOver(wonCombo) : '';
+    wonCombo.length > 0 ? gameOver(wonCombo, player) : '';
 }
 
 function checkWon(board, player) {
@@ -123,12 +124,14 @@ function checkWon(board, player) {
     return matches;
 }
 
-function gameOver(wonCombo) {
+function gameOver(wonCombo, player) {
     over = true;
-    wonCombo.forEach(i => {
-            document.getElementById(i).style.backgroundColor = 'green';
-        }
-    );
+    const bgColor = player === huPlayer ? 'green' : 'red';
+
+        wonCombo.forEach(i => {
+                document.getElementById(i).style.backgroundColor = bgColor;
+            }
+        );
     cells.forEach(cell => {
             cell.removeEventListener('click', turnClick, false);
         }
